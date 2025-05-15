@@ -1,28 +1,305 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Jogo da Velha Zueiro</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        h1 {
+            color: #ff4757;
+            text-shadow: 3px 3px 0 #fff;
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #576574;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            border: 5px dashed #ff4757;
+        }
+        
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .cell:hover {
+            transform: scale(1.05);
+            background-color: #ffeaa7;
+        }
+        
+        .cell.x {
+            color: #ff4757;
+        }
+        
+        .cell.o {
+            color: #2e86de;
+        }
+        
+        .status {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            background-color: #fff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        button {
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Comic Sans MS', cursive;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: scale(1.1);
+            background-color: #ff6b81;
+        }
+        
+        .emoji {
+            font-size: 1.5em;
+            margin: 0 5px;
+        }
+        
+        .bot-message {
+            margin-top: 20px;
+            font-style: italic;
+            color: #576574;
+            background-color: #fff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
-    <h1>Carros & Frutas</h1>
-    <h2>Frutas</h2>
-    <ol type="A" id="frutas">
-        <li>Pesego</li>
-        <li>Kiwi</li>
-        <li>maçã</li>
-        <li>Manga</li>
-        <li>pera</li>
-    </ol>
-    <h2>Carros</h2>
-    <ul id="carros">
-        <li>lamborghini veneno</li>
-        <li>Cool Chevrolet 2017: Chevrolet Camaro </li>
-        <li>Skyline GT-R R34</li>
-        <li>Ferrari 458-italia</li>
-        <li>bugatti veyron</li>
-    </ul>
+    <h1>Jogo da Velha Zueiro</h1>
+    <div class="subtitle">Onde o bot faz DUAS jogadas pra te sacanear! <span class="emoji">😂</span></div>
+    
+    <div class="status" id="status">Sua vez! Vai lá, eu confio!</div>
+    
+    <div class="board" id="board"></div>
+    
+    <button onclick="resetGame()">Jogar de Novo</button>
+    
+    <div class="bot-message" id="botMessage"></div>
+    
+    <script>
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        const botMessages = [
+            "Haha, duas jogadas de uma vez! 😈",
+            "Toma essa! Duas pedradas! 🚀🚀",
+            "Zoeira mode ON! 😎",
+            "Eu jogo duas, você joga uma! Justo? 🤪",
+            "Tá achando ruim? Chora mais! 😭",
+            "Parece que alguém vai perder... 😏",
+            "HAHAHA! Só vantagem pra mim! 🤑"
+        ];
+        
+        // Inicializa o tabuleiro
+        function initBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', () => handleCellClick(i));
+                boardElement.appendChild(cell);
+            }
+        }
+        
+        // Quando clica em uma célula
+        function handleCellClick(index) {
+            if (!gameActive || board[index] !== '') return;
+            
+            // Jogada do humano
+            makeMove(index, 'X');
+            
+            if (checkWinner()) {
+                document.getElementById('status').textContent = 'Você venceu! IMPOSSÍVEL!';
+                document.getElementById('botMessage').textContent = 'Tá roubando! 😡';
+                gameActive = false;
+                return;
+            }
+            
+            if (isBoardFull()) {
+                document.getElementById('status').textContent = 'Empate! Quase conseguiu!';
+                gameActive = false;
+                return;
+            }
+            
+            // Vez do bot - faz DUAS jogadas
+            setTimeout(() => {
+                if (gameActive) {
+                    document.getElementById('status').textContent = 'Minha vez! Toma isso!';
+                    
+                    // Primeira jogada do bot
+                    setTimeout(() => {
+                        const firstMove = findBestMove();
+                        makeMove(firstMove, 'O');
+                        
+                        if (!checkWinner() && !isBoardFull()) {
+                            // Segunda jogada do bot
+                            setTimeout(() => {
+                                const secondMove = findBestMove();
+                                makeMove(secondMove, 'O');
+                                updateStatus();
+                                
+                                if (checkWinner()) {
+                                    document.getElementById('status').textContent = 'EU VENCI! HAHAHA!';
+                                    document.getElementById('botMessage').textContent = 'Mais sorte na próxima! 😜';
+                                    gameActive = false;
+                                } else if (isBoardFull()) {
+                                    document.getElementById('status').textContent = 'Empate! Quase conseguiu!';
+                                    gameActive = false;
+                                } else {
+                                    document.getElementById('status').textContent = 'Sua vez de novo! Tenta a sorte!';
+                                }
+                                
+                                // Mensagem zoeira do bot
+                                document.getElementById('botMessage').textContent = 
+                                    botMessages[Math.floor(Math.random() * botMessages.length)];
+                            }, 500);
+                        } else {
+                            if (checkWinner()) {
+                                document.getElementById('status').textContent = 'EU VENCI! HAHAHA!';
+                                document.getElementById('botMessage').textContent = 'Mais sorte na próxima! 😜';
+                                gameActive = false;
+                            }
+                        }
+                    }, 500);
+                }
+            }, 800);
+        }
+        
+        // Faz uma jogada
+        function makeMove(index, player) {
+            board[index] = player;
+            const cell = document.querySelector(`.cell[data-index="${index}"]`);
+            cell.textContent = player;
+            cell.classList.add(player.toLowerCase());
+        }
+        
+        // Atualiza o status
+        function updateStatus() {
+            if (!gameActive) return;
+            document.getElementById('status').textContent = currentPlayer === 'X' ? 
+                'Sua vez! Vai lá, eu confio!' : 'Minha vez! Toma isso!';
+        }
+        
+        // Verifica se tem vencedor
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // linhas
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // colunas
+                [0, 4, 8], [2, 4, 6]             // diagonais
+            ];
+            
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            return null;
+        }
+        
+        // Verifica se o tabuleiro está cheio
+        function isBoardFull() {
+            return board.every(cell => cell !== '');
+        }
+        
+        // Encontra a melhor jogada para o bot
+        function findBestMove() {
+            // Primeiro tenta vencer
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = 'O';
+                    if (checkWinner() === 'O') {
+                        board[i] = '';
+                        return i;
+                    }
+                    board[i] = '';
+                }
+            }
+            
+            // Depois tenta bloquear o jogador
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = 'X';
+                    if (checkWinner() === 'X') {
+                        board[i] = '';
+                        return i;
+                    }
+                    board[i] = '';
+                }
+            }
+            
+            // Se não, joga aleatório
+            const availableMoves = board.map((cell, index) => cell === '' ? index : null).filter(val => val !== null);
+            return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
+        
+        // Reseta o jogo
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            initBoard();
+            document.getElementById('status').textContent = 'Sua vez! Vai lá, eu confio!';
+            document.getElementById('botMessage').textContent = '';
+        }
+        
+        // Inicia o jogo
+        initBoard();
+    </script>
 </body>
 </html>
